@@ -40,10 +40,11 @@ def post_calendar():
             'calendar_id' : calendar.id
         })
     except:
-        print("Unexpected error:", sys.exc_info()[0])
-        return jsonify({
-            'success': False
-        })
+        #print("Unexpected error:", sys.exc_info()[0])
+        pass
+    return jsonify({
+        'success': False
+    })
 
 @mod_api.route('/calendars/<int:calendar_id>/', methods=['GET'])
 def get_calendar(calendar_id):
@@ -55,11 +56,12 @@ def get_calendar(calendar_id):
                 'calendar': calendar.long()
             })
     except:
-        print("Unexpected error:", sys.exc_info()[0])
-        return jsonify({
-            'success': False,
-            'calendar_id': calendar_id
-        })
+        #print("Unexpected error:", sys.exc_info()[0])
+        pass
+    return jsonify({
+        'success': False,
+        'calendar_id': calendar_id
+    })
 
 @mod_api.route('/calendars/<int:calendar_id>/', methods=['DELETE'])
 def delete_calendar(calendar_id):
@@ -79,9 +81,9 @@ def delete_calendar(calendar_id):
             'name': name
         })
     except:
-        import traceback
-        print("Unexpected error:", sys.exc_info()[0])
-        traceback.print_exc(file=sys.stdout)
+        #import traceback
+        #print("Unexpected error:", sys.exc_info()[0])
+        #traceback.print_exc(file=sys.stdout)
         return jsonify({
             'success': False,
             'calendar_id': calendar_id
@@ -107,7 +109,7 @@ def patch_calendar(calendar_id):
                 'calendar_id': calendar_id
             })
     except:
-        print("Unexpected error:", sys.exc_info()[0])
+        #print("Unexpected error:", sys.exc_info()[0])
         return jsonify({
             'success': False,
             'calendar_id': calendar_id
@@ -117,7 +119,10 @@ def patch_calendar(calendar_id):
 def get_tasks(calendar_id):
     calendar_query = Calendar.query.get(calendar_id)
     if calendar_query is None:
-        return not_found_error('Calendar %s not found' % calendar_id)
+        return jsonify({
+            'success': False,
+            'calendar_id': calendar_id
+        })
 
     today_date = datetime.date(datetime.now())
     current_day = today_date.day
@@ -149,7 +154,7 @@ def get_task(task_id):
             'task': task_query.long()
         })
     except:
-        print("Unexpected error:", sys.exc_info()[0])
+        #print("Unexpected error:", sys.exc_info()[0])
         return jsonify({
             'success': False,
             'task_id': task_id
@@ -167,7 +172,7 @@ def post_task():
             'task_id': task.id
         })
     except:
-        print("Unexpected error:", sys.exc_info()[0])
+        #print("Unexpected error:", sys.exc_info()[0])
         return jsonify({
             'success': False,
             'calendar_id': newTask['calendar_id']
@@ -177,17 +182,18 @@ def post_task():
 #@auth.requires_auth('patch:tasks')
 def update_task_day(task_id):
     body = request.get_json()
-    newDay = int(body.get('newDay', None))
+    newDay = body.get('newDay', None)
     ret = False
     try:
         task = Task.getTask(task_id)
         if task and newDay:
-            task.start_time = task.start_time.replace(day = newDay)
-            task.end_time = task.end_time.replace(day = newDay)
+            task.start_time = task.start_time.replace(day = int(newDay))
+            task.end_time = task.end_time.replace(day = int(newDay))
             task.update()
             ret = True
     except:
-        print("Unexpected error:", sys.exc_info()[0])
+        #print("Unexpected error:", sys.exc_info()[0])
+        pass
 
     return jsonify({
       'success': ret,

@@ -19,6 +19,7 @@ flask db upgrade
 ```
 
 curl http://localhost:5000/api/calendars/ -H "content-type: application/json" -X GET
+curl https://calendar-backend-acv.herokuapp.com/api/calendars/ -H "content-type: application/json" -X GET
 
 curl http://localhost:5000/api/calendars/1/ -H "content-type: application/json" -X GET
 

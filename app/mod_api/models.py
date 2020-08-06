@@ -322,4 +322,4 @@ class Task(Base):
     def update(self):
         db.session.commit()
 
-Calendar.tasks = relationship("Task", order_by=Task.id, back_populates="calendar")
+Calendar.tasks = relationship("Task", order_by=Task.id, cascade="all, delete", back_populates="calendar")

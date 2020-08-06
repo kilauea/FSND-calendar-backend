@@ -22,7 +22,7 @@ def get_calendars_list():
     if calendars_query.items:
         return jsonify({
             'success': True,
-            'calendars' : [str(calendar) for calendar in calendars_query.items],
+            'calendars' : [calendar.long() for calendar in calendars_query.items],
             'n_calendars': len(calendars_query.items)
         })
     else:

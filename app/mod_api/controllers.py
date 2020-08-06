@@ -11,6 +11,7 @@ from datetime import date, datetime, timedelta
 
 from app.mod_api.models import Calendar
 from app.mod_api.models import Task
+import app.mod_auth.auth as auth
 
 # Define the blueprint: 'api', set its url prefix: app.url/api
 mod_api = Blueprint('api', __name__, url_prefix='/api')
@@ -31,7 +32,8 @@ def get_calendars_list():
         })
 
 @mod_api.route('/calendars/', methods=['POST'])
-def post_calendar():
+@auth.requires_auth('post:calendars')
+def post_calendar(jwt):
     try:
         calendar = Calendar(**request.json)
         calendar.insert()
@@ -47,7 +49,8 @@ def post_calendar():
     })
 
 @mod_api.route('/calendars/<int:calendar_id>/', methods=['GET'])
-def get_calendar(calendar_id):
+@auth.requires_auth('get:calendars')
+def get_calendar(jwt, calendar_id):
     try:
         calendar = Calendar.query.get(calendar_id)
         if calendar:
@@ -64,7 +67,8 @@ def get_calendar(calendar_id):
     })
 
 @mod_api.route('/calendars/<int:calendar_id>/', methods=['DELETE'])
-def delete_calendar(calendar_id):
+@auth.requires_auth('delete:calendars')
+def delete_calendar(jwt, calendar_id):
     try:
         calendar = Calendar.query.get(calendar_id)
         if calendar:
@@ -90,7 +94,8 @@ def delete_calendar(calendar_id):
         })
 
 @mod_api.route('/calendars/<int:calendar_id>/', methods=['PATCH'])
-def patch_calendar(calendar_id):
+@auth.requires_auth('patch:calendars')
+def patch_calendar(jwt, calendar_id):
     try:
         calendar = Calendar.query.get(calendar_id)
         if calendar:
@@ -116,7 +121,8 @@ def patch_calendar(calendar_id):
         })
 
 @mod_api.route('/calendars/<int:calendar_id>/tasks/', methods=['GET'])
-def get_tasks(calendar_id):
+@auth.requires_auth('get:tasks')
+def get_tasks(jwt, calendar_id):
     calendar_query = Calendar.query.get(calendar_id)
     if calendar_query is None:
         return jsonify({
@@ -145,7 +151,8 @@ def get_tasks(calendar_id):
     })
 
 @mod_api.route('/calendars/tasks/<int:task_id>/', methods=['GET'])
-def get_task(task_id):
+@auth.requires_auth('get:tasks')
+def get_task(jwt, task_id):
     try:
         task_query = Task.query.join(Calendar).filter(Task.id == task_id).one_or_none()
         return jsonify({
@@ -161,7 +168,8 @@ def get_task(task_id):
         })
 
 @mod_api.route('/calendars/tasks/', methods=['POST'])
-def post_task():
+@auth.requires_auth('post:tasks')
+def post_task(jwt):
     try:
         newTask = request.json
         task = Task(**newTask)
@@ -179,8 +187,8 @@ def post_task():
         })
 
 @mod_api.route('/calendars/tasks/<int:task_id>/', methods=['PATCH'])
-#@auth.requires_auth('patch:tasks')
-def update_task_day(task_id):
+@auth.requires_auth('patch:tasks')
+def update_task_day(jwt, task_id):
     body = request.get_json()
     newDay = body.get('newDay', None)
     ret = False
@@ -201,8 +209,8 @@ def update_task_day(task_id):
     })
 
 @mod_api.route('/calendars/tasks/<int:task_id>/', methods=['DELETE'])
-#@auth.requires_auth('patch:tasks')
-def delete_task(task_id):
+@auth.requires_auth('delete:tasks')
+def delete_task(jwt, task_id):
     try:
         task = Task.getTask(task_id)
         if task:

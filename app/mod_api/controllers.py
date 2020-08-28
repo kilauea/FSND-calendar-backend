@@ -16,13 +16,18 @@ import app.mod_auth.auth as auth
 # Define the blueprint: 'api', set its url prefix: app.url/api
 mod_api = Blueprint('api', __name__, url_prefix='/api')
 
+
 @mod_api.route('/calendars/', methods=['GET'])
 def get_calendars_list():
-    calendars_query = Calendar.query.order_by(Calendar.date_created.desc()).paginate(error_out=False, max_per_page=10)
+    calendars_query = Calendar.query.order_by(
+        Calendar.date_created.desc()).paginate(
+            error_out=False,
+            max_per_page=10)
     if calendars_query.items:
         return jsonify({
             'success': True,
-            'calendars' : [calendar.long() for calendar in calendars_query.items],
+            'calendars': [
+                calendar.long() for calendar in calendars_query.items],
             'n_calendars': len(calendars_query.items)
         })
     else:
@@ -30,6 +35,7 @@ def get_calendars_list():
             'success': False,
             'n_calendars': 0
         })
+
 
 @mod_api.route('/calendars/', methods=['POST'])
 @auth.requires_auth('post:calendars')
@@ -39,14 +45,14 @@ def post_calendar(jwt):
         calendar.insert()
         return jsonify({
             'success': True,
-            'calendar_id' : calendar.id
+            'calendar_id': calendar.id
         })
-    except:
-        #print("Unexpected error:", sys.exc_info()[0])
+    except Exception:
         pass
     return jsonify({
         'success': False
     })
+
 
 @mod_api.route('/calendars/<int:calendar_id>/', methods=['GET'])
 @auth.requires_auth('get:calendars')
@@ -58,13 +64,13 @@ def get_calendar(jwt, calendar_id):
                 'success': True,
                 'calendar': calendar.long()
             })
-    except:
-        #print("Unexpected error:", sys.exc_info()[0])
+    except Exception:
         pass
     return jsonify({
         'success': False,
         'calendar_id': calendar_id
     })
+
 
 @mod_api.route('/calendars/<int:calendar_id>/', methods=['DELETE'])
 @auth.requires_auth('delete:calendars')
@@ -84,14 +90,12 @@ def delete_calendar(jwt, calendar_id):
             'calendar_id': calendar_id,
             'name': name
         })
-    except:
-        #import traceback
-        #print("Unexpected error:", sys.exc_info()[0])
-        #traceback.print_exc(file=sys.stdout)
+    except Exception:
         return jsonify({
             'success': False,
             'calendar_id': calendar_id
         })
+
 
 @mod_api.route('/calendars/<int:calendar_id>/', methods=['PATCH'])
 @auth.requires_auth('patch:calendars')
@@ -113,12 +117,12 @@ def patch_calendar(jwt, calendar_id):
                 'success': False,
                 'calendar_id': calendar_id
             })
-    except:
-        #print("Unexpected error:", sys.exc_info()[0])
+    except Exception:
         return jsonify({
             'success': False,
             'calendar_id': calendar_id
         })
+
 
 @mod_api.route('/calendars/<int:calendar_id>/tasks/', methods=['GET'])
 @auth.requires_auth('get:tasks')
@@ -139,7 +143,8 @@ def get_tasks(jwt, calendar_id):
     month = int(request.args.get("m", current_month))
     month = max(min(month, 12), 1)
 
-    tasks = Task.getTasks(calendar_id, year, month, calendar_query.hide_past_tasks)
+    tasks = Task.getTasks(calendar_id, year, month,
+                          calendar_query.hide_past_tasks)
 
     return jsonify({
         'year': year,
@@ -150,22 +155,24 @@ def get_tasks(jwt, calendar_id):
         'success': True
     })
 
+
 @mod_api.route('/calendars/tasks/<int:task_id>/', methods=['GET'])
 @auth.requires_auth('get:tasks')
 def get_task(jwt, task_id):
     try:
-        task_query = Task.query.join(Calendar).filter(Task.id == task_id).one_or_none()
+        task_query = Task.query.join(Calendar).filter(
+            Task.id == task_id).one_or_none()
         return jsonify({
             'success': True,
             'calendar': task_query.calendar.long(),
             'task': task_query.long()
         })
-    except:
-        #print("Unexpected error:", sys.exc_info()[0])
+    except Exception:
         return jsonify({
             'success': False,
             'task_id': task_id
         })
+
 
 @mod_api.route('/calendars/tasks/', methods=['POST'])
 @auth.requires_auth('post:tasks')
@@ -179,12 +186,12 @@ def post_task(jwt):
             'calendar_id': task.calendar_id,
             'task_id': task.id
         })
-    except:
-        #print("Unexpected error:", sys.exc_info()[0])
+    except Exception:
         return jsonify({
             'success': False,
             'calendar_id': newTask['calendar_id']
         })
+
 
 @mod_api.route('/calendars/tasks/<int:task_id>/', methods=['PATCH'])
 @auth.requires_auth('patch:tasks')
@@ -195,18 +202,17 @@ def update_task_day(jwt, task_id):
     try:
         task = Task.getTask(task_id)
         if task and newDay:
-            task.start_time = task.start_time.replace(day = int(newDay))
-            task.end_time = task.end_time.replace(day = int(newDay))
+            task.start_time = task.start_time.replace(day=int(newDay))
+            task.end_time = task.end_time.replace(day=int(newDay))
             task.update()
             ret = True
-    except:
-        #print("Unexpected error:", sys.exc_info()[0])
+    except Exception:
         pass
-
     return jsonify({
-      'success': ret,
-      'task_id': task_id
+        'success': ret,
+        'task_id': task_id
     })
+
 
 @mod_api.route('/calendars/tasks/<int:task_id>/', methods=['DELETE'])
 @auth.requires_auth('delete:tasks')
@@ -226,20 +232,23 @@ def delete_task(jwt, task_id):
             'task_id': task_id,
             'title': title
         })
-    except:
+    except Exception:
         return jsonify({
             'success': False,
             'task_id': task_id
         })
 
-## Error Handling
+
+# Error Handling
 '''
 Error handler for unprocessable entity
 '''
+
+
 @mod_api.errorhandler(422)
 def unprocessable(error):
     return jsonify({
-        "success": False, 
+        "success": False,
         "error": 422,
         "message": "unprocessable"
     }), 422
@@ -248,21 +257,26 @@ def unprocessable(error):
 '''
 Error handler for 404
 '''
+
+
 @mod_api.errorhandler(404)
 def not_found(error):
     return jsonify({
-        "success": False, 
+        "success": False,
         "error": 404,
         "message": "resource not found"
     }), 404
 
+
 '''
 Error handler for 400: bad request
 '''
+
+
 @mod_api.errorhandler(400)
 def bad_request(error):
     return jsonify({
-        "success": False, 
+        "success": False,
         "error": 400,
         "message": "bad request"
     }), 400

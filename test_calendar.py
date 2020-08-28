@@ -5,7 +5,6 @@ import json
 from flask import session
 import uuid
 from datetime import datetime, timedelta
-import pickle
 
 from app import create_app, db
 from app.mod_api.models import Calendar
@@ -22,7 +21,19 @@ from app.mod_api.models import Task
 #   "post:calendars",
 #   "post:tasks"
 #
-jwt_admin = 'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IkVFUkJESDlzMHZEdHREdHl6WkRVNSJ9.eyJpc3MiOiJodHRwczovL2tpbGF1ZWEuZXUuYXV0aDAuY29tLyIsInN1YiI6ImF1dGgwfDVlYWVkOTVmZGMzMjA2MGJlN2Y3ZTBjYSIsImF1ZCI6WyJjYWxlbmRhciIsImh0dHBzOi8va2lsYXVlYS5ldS5hdXRoMC5jb20vdXNlcmluZm8iXSwiaWF0IjoxNTk2NzI2MDMyLCJleHAiOjE1OTkzMTgwMzIsImF6cCI6Im9yUTBZTnlJdEhwWkhWQXdwRzJQYVJNV2pMODJxSndnIiwic2NvcGUiOiJvcGVuaWQgcHJvZmlsZSBlbWFpbCIsInBlcm1pc3Npb25zIjpbImRlbGV0ZTpjYWxlbmRhcnMiLCJkZWxldGU6dGFza3MiLCJnZXQ6Y2FsZW5kYXJzIiwiZ2V0OnRhc2tzIiwicGF0Y2g6Y2FsZW5kYXJzIiwicGF0Y2g6dGFza3MiLCJwb3N0OmNhbGVuZGFycyIsInBvc3Q6dGFza3MiXX0.YfJJSDmbi5N33LiUmHt10xAI4u-AWP1ium6MWYYUTFLMSoL5iZmFFMfLft4og3mrryBGgQ21Zu8W_Gw9Efxx44mgUG5eVweN4cBt158hqrrfOrcaJr1yRzJcL9FNpJ524MCahUero5mqhTFWDXMLt-izQBPBQ2TphRJixOO9Ig1WEfLCnc4zn6jDmkD0jhUv7vzVt3-3QMevB43Lr1fQAHskEk851WW6JVTsUJFzDHW04nOi7ZyTpAm1wO5aK2oUjOvGDZPDyaNepTZdVbVEsGvdjwoM2msbNwiaH_3M25o_JzE298M0AdYLlGoRIMrUiOa0bEK0Au6SGBf1XaeuRA'
+jwt_admin = 'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IkVFUkJESDlzMHZEdHR\
+EdHl6WkRVNSJ9.eyJpc3MiOiJodHRwczovL2tpbGF1ZWEuZXUuYXV0aDAuY29tLyIsInN1YiI6Im\
+F1dGgwfDVmMzA0ZGQ5ODQ0NDUwMDAzZDkwODU2MSIsImF1ZCI6WyJjYWxlbmRhciIsImh0dHBzOi\
+8va2lsYXVlYS5ldS5hdXRoMC5jb20vdXNlcmluZm8iXSwiaWF0IjoxNTk4NjI0MzU0LCJleHAiOj\
+E2MDEyMTYzNTQsImF6cCI6Im9yUTBZTnlJdEhwWkhWQXdwRzJQYVJNV2pMODJxSndnIiwic2NvcG\
+UiOiJvcGVuaWQgcHJvZmlsZSBlbWFpbCIsInBlcm1pc3Npb25zIjpbImRlbGV0ZTpjYWxlbmRhcn\
+MiLCJkZWxldGU6dGFza3MiLCJnZXQ6Y2FsZW5kYXJzIiwiZ2V0OnRhc2tzIiwicGF0Y2g6Y2FsZW\
+5kYXJzIiwicGF0Y2g6dGFza3MiLCJwb3N0OmNhbGVuZGFycyIsInBvc3Q6dGFza3MiXX0.teCNr8\
+jk8sjhFF1jPwoKqtTeOVq5ZLOzzB6kBQeV7wG48g71xPnwnTWopQ0wmHsO4KdsptIKHZ5lie5-0W\
+Bh7z9ibPPPNVodmVtZpyCHQRHOgXJH6-uHMLz6llhywVPmqq-oopd3_xrS50rtxmiqtwBIXiZBcw\
+LKO9y3IWwlJHP56_72camSUxpT7TxWMnXcmKHHNmERTfazSRIcQxV-J9ZkZRioK5uxVGMro8uXDL\
+Qfg77LUyzAoiUwBBoAFZjnne2tQdcg0cyTiy6gw5-XdwkaX6JDZCEa8J8juxlMXIOLwf6gxt94qU\
+Jh2xPpKL814ZUpagvm_YVFbO33aWcSFw'
 
 # Role: CalendarManager
 # Permissions:
@@ -32,14 +43,35 @@ jwt_admin = 'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IkVFUkJESDlzMHZEdHREdHl
 #   "patch:tasks",
 #   "post:tasks"
 #
-jwt_manager = 'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IkVFUkJESDlzMHZEdHREdHl6WkRVNSJ9.eyJpc3MiOiJodHRwczovL2tpbGF1ZWEuZXUuYXV0aDAuY29tLyIsInN1YiI6ImF1dGgwfDVlYjM0MzRkZDhiMmJmMGMwNDVmYmZjYiIsImF1ZCI6WyJjYWxlbmRhciIsImh0dHBzOi8va2lsYXVlYS5ldS5hdXRoMC5jb20vdXNlcmluZm8iXSwiaWF0IjoxNTk2NzI2MTg1LCJleHAiOjE1OTkzMTgxODUsImF6cCI6Im9yUTBZTnlJdEhwWkhWQXdwRzJQYVJNV2pMODJxSndnIiwic2NvcGUiOiJvcGVuaWQgcHJvZmlsZSBlbWFpbCIsInBlcm1pc3Npb25zIjpbImRlbGV0ZTp0YXNrcyIsImdldDpjYWxlbmRhcnMiLCJnZXQ6dGFza3MiLCJwYXRjaDp0YXNrcyIsInBvc3Q6dGFza3MiXX0.mrwrzu32X-GRwsamSXBxzANVBANSirazCokQVeyRBDQTRX3BbVTxE7z7tY1YvZSMAJhPSnXmmr6B7eyuoqTbmirbW-RQNlQfiBxPOE5tk_ss--VzQ8_o2JXahBOJ9XQw_5sI7S1w-OOpqF_ttEr4RLWj39JkeeRAdnJ_YJXe9mVR7aNKX_ua8n7Ak-pLTyI8r9TpkdjvxPeffTZTsuFjMebR9Vp-LtHIMeTHRCSd6BVHXnqWeX7-zf_r0jwgWTh2Qfbtl9jwFnLPUgVG26VV8SnZXVL1Go6QjXzHKWKNraqr9TlzlO5FxYV9jDkbe9RtqQELvwdW6bAbkDGp4JGnAg'
+jwt_manager = 'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IkVFUkJESDlzMHZEd\
+HREdHl6WkRVNSJ9.eyJpc3MiOiJodHRwczovL2tpbGF1ZWEuZXUuYXV0aDAuY29tLyIsInN1YiI6\
+ImF1dGgwfDVmMzA1M2RkMWM0NGRjMDAzNzUxNzUzOCIsImF1ZCI6WyJjYWxlbmRhciIsImh0dHBz\
+Oi8va2lsYXVlYS5ldS5hdXRoMC5jb20vdXNlcmluZm8iXSwiaWF0IjoxNTk4NjI0NDY5LCJleHAi\
+OjE2MDEyMTY0NjksImF6cCI6Im9yUTBZTnlJdEhwWkhWQXdwRzJQYVJNV2pMODJxSndnIiwic2Nv\
+cGUiOiJvcGVuaWQgcHJvZmlsZSBlbWFpbCIsInBlcm1pc3Npb25zIjpbImRlbGV0ZTp0YXNrcyIs\
+ImdldDpjYWxlbmRhcnMiLCJnZXQ6dGFza3MiLCJwYXRjaDp0YXNrcyIsInBvc3Q6dGFza3MiXX0.\
+G9Lo0A8-tuTURiNFnDBbeXeu7hqtG6eZUtOhbshfQU7joubCPazPk_teG2pYzsnqbQQ7qA9j9HSj\
+f9QxqO6zbU21IdjeOxiHx-rtpSBYIQYrl1bmJM6JL488M_Rg5zy6elHuuW1ZHo1D5PskQJT_utOZ\
+6wCvcB3qRAEqsjFBxze3JCuNk2Gh0oDtiTMTAD8eoEj2P6Vonme6Kj340ZjZ7wWHaUV7g-PDKl0q\
+TgKKD3CfJtz9v2v_lwz1Eij6x2BRD0Q3nuVPC0QDut5wkyeHKbZYgGdzewX2TqIH5P2B6xEtDcSS\
+GsPVPCuMKcQijbVi5Ow3CAdpysS0zte_xrCPag'
 
 # Role: CalendarUser
 # Permissions:
 #   "get:calendars",
 #   "get:tasks"
 #
-jwt_user = 'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IkVFUkJESDlzMHZEdHREdHl6WkRVNSJ9.eyJpc3MiOiJodHRwczovL2tpbGF1ZWEuZXUuYXV0aDAuY29tLyIsInN1YiI6ImF1dGgwfDVlYjgzZThjNThiZGI1MGJmMjAyODdhYSIsImF1ZCI6WyJjYWxlbmRhciIsImh0dHBzOi8va2lsYXVlYS5ldS5hdXRoMC5jb20vdXNlcmluZm8iXSwiaWF0IjoxNTk2NzI2MjMyLCJleHAiOjE1OTkzMTgyMzIsImF6cCI6Im9yUTBZTnlJdEhwWkhWQXdwRzJQYVJNV2pMODJxSndnIiwic2NvcGUiOiJvcGVuaWQgcHJvZmlsZSBlbWFpbCIsInBlcm1pc3Npb25zIjpbImdldDpjYWxlbmRhcnMiLCJnZXQ6dGFza3MiXX0.UUUQ18JHLQL9YxWDuUX_gxQKxLNWfowinpTKLZgsPO_W2hhdQM663XqK19rYNcZ8DkH6CcHVkyBPQ_Y2B1GY7OA8qzSgfCgibZhnp24uJdPSNvUsoof7KNDwZAJXbpT2cAQ6hw7N9lJJpd_9chMllKLf5UoKWdAwzIlT6It8PE3lDM4fIIjLVK-7B3jIgw5pMe2_xRGprloKB4N4K-5jHgtmrKxj4B87N99ReTB99sG_iiBHHLpQeGJCcAaw86yyvX4UyUaXQPF4A_1V5176iRlVI13SfLGX4ObyouJTALDl2SprSXwDQ8Ii_5WMnyjUNrt0bcsCsAyhOKjHCIDR9A'
+jwt_user = 'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IkVFUkJESDlzMHZEdHRE\
+dHl6WkRVNSJ9.eyJpc3MiOiJodHRwczovL2tpbGF1ZWEuZXUuYXV0aDAuY29tLyIsInN1YiI6ImF\
+1dGgwfDVmMzA1NDI4NTBhNWU1MDAzNzQwNTRiYyIsImF1ZCI6WyJjYWxlbmRhciIsImh0dHBzOi8\
+va2lsYXVlYS5ldS5hdXRoMC5jb20vdXNlcmluZm8iXSwiaWF0IjoxNTk4NjI0NTE2LCJleHAiOjE\
+2MDEyMTY1MTYsImF6cCI6Im9yUTBZTnlJdEhwWkhWQXdwRzJQYVJNV2pMODJxSndnIiwic2NvcGU\
+iOiJvcGVuaWQgcHJvZmlsZSBlbWFpbCIsInBlcm1pc3Npb25zIjpbImdldDpjYWxlbmRhcnMiLCJ\
+nZXQ6dGFza3MiXX0.eEMgV7FDOo2D2ZsHVbVgxmC_389hbmCftDio2YXCsRfubvlqR0ZlH4tlAoy\
+9w0tIKDCCrM9IKLq1fbqJ6rYZdAdlab1csIInqDbiSGIleSMk_3ecNE5RvmUSx_rc6DjXt6tLlfj\
+gCJ022-FbdCcUjquIzpv4-G2ciEv3B1sS4n13dnsYlAJKRUn0zqrXke4xL6kJcoMz9XQFFid2dCB\
+ybB0iCr51BVwlX7mC30DacY9LtMtrelO6F7b0h2qjuQT17B8GPEMRh2SDdPRm5HscsdHUk7z9Vi0\
+iJN4S66UwAc1hM3cVSeL1MeIkAukdPsx8ZLDBy-664kLK3cIJLzOEIw'
 
 
 class CalendarTestCase(unittest.TestCase):
@@ -57,29 +89,29 @@ class CalendarTestCase(unittest.TestCase):
 
         for i in range(self.n_calendars):
             calendar = Calendar(
-                name = 'Test Calendar %d' % (i + 1),
-                description = 'Test Calendar %d' % (i + 1),
-                min_year = 2000,
-                max_year = 2050,
-                time_zone = 'Europe/Madrid',
-                week_starting_day = 0,
-                emojis_enabled = True,
-                show_view_past_btn = True
+                name='Test Calendar %d' % (i + 1),
+                description='Test Calendar %d' % (i + 1),
+                min_year=2000,
+                max_year=2050,
+                time_zone='Europe/Madrid',
+                week_starting_day=0,
+                emojis_enabled=True,
+                show_view_past_btn=True
             )
             calendar.insert()
             for t in range(self.n_tasks):
                 task = Task(
-                    calendar_id = calendar.id,
-                    title = 'Test Task %d' % t,
-                    color = '#B19CDA',
-                    details = 'Test Task %d' % t,
-                    start_time = datetime.now() + timedelta(days=t - 5),
-                    end_time = datetime.now() + timedelta(days=t - 5),
-                    is_all_day = True,
-                    is_recurrent = False,
-                    repetition_value = 0,
-                    repetition_type = ' ',
-                    repetition_subtype =  ' '
+                    calendar_id=calendar.id,
+                    title='Test Task %d' % t,
+                    color='#B19CDA',
+                    details='Test Task %d' % t,
+                    start_time=datetime.now() + timedelta(days=t - 5),
+                    end_time=datetime.now() + timedelta(days=t - 5),
+                    is_all_day=True,
+                    is_recurrent=False,
+                    repetition_value=0,
+                    repetition_type=' ',
+                    repetition_subtype=' '
                 )
                 task.insert()
 
@@ -111,6 +143,7 @@ class CalendarTestCase(unittest.TestCase):
         @mod_api.route('/calendars/', methods=['GET'])
         def get_calendars_list():
     '''
+
     def test_get_calendars(self):
         res = self.client().get('/api/calendars/')
         self.assertEqual(res.json['success'], True)
@@ -131,6 +164,7 @@ class CalendarTestCase(unittest.TestCase):
         @auth.requires_auth('post:calendars')
         def post_calendar(jwt):
     '''
+
     def test_post_calendar_no_jwt_error(self):
         calendar = {
             'name': 'Test Calendar Post',
@@ -162,7 +196,8 @@ class CalendarTestCase(unittest.TestCase):
             'hide_past_tasks': False,
             'days_past_to_keep_hidden_tasks': 62
         }
-        res = self.client().post('/api/calendars/', json=calendar, headers=self.get_rbac_headers('admin'))
+        res = self.client().post('/api/calendars/', json=calendar,
+                                 headers=self.get_rbac_headers('admin'))
         self.assertEqual(res.json['success'], True)
         self.assertTrue(res.json['calendar_id'] > 15)
 
@@ -180,7 +215,8 @@ class CalendarTestCase(unittest.TestCase):
             'hide_past_tasks': False,
             'days_past_to_keep_hidden_tasks': 62
         }
-        res = self.client().post('/api/calendars/', data=calendar, headers=self.get_rbac_headers('admin'))
+        res = self.client().post('/api/calendars/', data=calendar,
+                                 headers=self.get_rbac_headers('admin'))
         self.assertEqual(res.json['success'], False)
 
     def test_post_calendar_manager_error(self):
@@ -197,7 +233,8 @@ class CalendarTestCase(unittest.TestCase):
             'hide_past_tasks': False,
             'days_past_to_keep_hidden_tasks': 62
         }
-        res = self.client().post('/api/calendars/', json=calendar, headers=self.get_rbac_headers('manager'))
+        res = self.client().post('/api/calendars/', json=calendar,
+                                 headers=self.get_rbac_headers('manager'))
         self.check_no_permissions(res.json)
 
     def test_post_calendar_user_error(self):
@@ -214,7 +251,8 @@ class CalendarTestCase(unittest.TestCase):
             'hide_past_tasks': False,
             'days_past_to_keep_hidden_tasks': 62
         }
-        res = self.client().post('/api/calendars/', json=calendar, headers=self.get_rbac_headers('user'))
+        res = self.client().post('/api/calendars/', json=calendar,
+                                 headers=self.get_rbac_headers('user'))
         self.check_no_permissions(res.json)
 
     '''
@@ -222,33 +260,38 @@ class CalendarTestCase(unittest.TestCase):
         @auth.requires_auth('get:calendars')
         def get_calendar(jwt, calendar_id):
     '''
+
     def test_get_calendar_by_id_no_jwt_error(self):
         res = self.client().get('/api/calendars/1/')
         self.check_no_authorization(res.json)
 
     def test_get_calendar_by_id_admin(self):
-        res = self.client().get('/api/calendars/1/', headers=self.get_rbac_headers('admin'))
+        res = self.client().get('/api/calendars/1/',
+                                headers=self.get_rbac_headers('admin'))
         self.assertEqual(res.json['success'], True)
         calendar = res.json['calendar']
         self.assertTrue(type(calendar) == dict)
         self.assertTrue(calendar['name'] == 'Test Calendar 1')
 
     def test_get_calendar_by_id_manager(self):
-        res = self.client().get('/api/calendars/1/', headers=self.get_rbac_headers('manager'))
+        res = self.client().get('/api/calendars/1/',
+                                headers=self.get_rbac_headers('manager'))
         self.assertEqual(res.json['success'], True)
         calendar = res.json['calendar']
         self.assertTrue(type(calendar) == dict)
         self.assertTrue(calendar['name'] == 'Test Calendar 1')
 
     def test_get_calendar_by_id_user(self):
-        res = self.client().get('/api/calendars/1/', headers=self.get_rbac_headers('user'))
+        res = self.client().get('/api/calendars/1/',
+                                headers=self.get_rbac_headers('user'))
         self.assertEqual(res.json['success'], True)
         calendar = res.json['calendar']
         self.assertTrue(type(calendar) == dict)
         self.assertTrue(calendar['name'] == 'Test Calendar 1')
 
     def test_get_calendar_invalid_id_admin(self):
-        res = self.client().get('/api/calendars/1000/', headers=self.get_rbac_headers('admin'))
+        res = self.client().get('/api/calendars/1000/',
+                                headers=self.get_rbac_headers('admin'))
         self.assertEqual(res.json['success'], False)
 
     '''
@@ -256,6 +299,7 @@ class CalendarTestCase(unittest.TestCase):
         @auth.requires_auth('delete:calendars')
         def delete_calendar(jwt, calendar_id):
     '''
+
     def test_delete_calendar_by_id_no_jwt_error(self):
         calendar_id = 1
         res = self.client().delete('/api/calendars/%d/' % calendar_id)
@@ -263,33 +307,41 @@ class CalendarTestCase(unittest.TestCase):
 
     def test_delete_calendar_by_id_admin(self):
         calendar = Calendar(
-            name = 'Test Calendar to delete',
-            description = 'Test Calendar to delete',
-            min_year = 2000,
-            max_year = 2050,
-            time_zone = 'Europe/Madrid',
-            week_starting_day = 0,
-            emojis_enabled = True,
-            show_view_past_btn = True
+            name='Test Calendar to delete',
+            description='Test Calendar to delete',
+            min_year=2000,
+            max_year=2050,
+            time_zone='Europe/Madrid',
+            week_starting_day=0,
+            emojis_enabled=True,
+            show_view_past_btn=True
         )
         calendar.insert()
-        res = self.client().delete('/api/calendars/%d/' % calendar.id, headers=self.get_rbac_headers('admin'))
+        res = self.client().delete('/api/calendars/%d/' %
+                                   calendar.id,
+                                   headers=self.get_rbac_headers('admin'))
         self.assertEqual(res.json['success'], True)
         self.assertEqual(res.json['calendar_id'], calendar.id)
 
     def test_delete_calendar_by_id_manager_error(self):
         calendar_id = 1
-        res = self.client().delete('/api/calendars/%d/' % calendar_id, headers=self.get_rbac_headers('manager'))
+        res = self.client().delete('/api/calendars/%d/' %
+                                   calendar_id,
+                                   headers=self.get_rbac_headers('manager'))
         self.check_no_permissions(res.json)
 
     def test_delete_calendar_by_id_user_error(self):
         calendar_id = 1
-        res = self.client().delete('/api/calendars/%d/' % calendar_id, headers=self.get_rbac_headers('user'))
+        res = self.client().delete('/api/calendars/%d/' %
+                                   calendar_id,
+                                   headers=self.get_rbac_headers('user'))
         self.check_no_permissions(res.json)
 
     def test_delete_calendar_invalid_id_admin(self):
         calendar_id = 1000
-        res = self.client().delete('/api/calendars/%d/' % calendar_id, headers=self.get_rbac_headers('admin'))
+        res = self.client().delete('/api/calendars/%d/' %
+                                   calendar_id,
+                                   headers=self.get_rbac_headers('admin'))
         self.assertEqual(res.json['success'], False)
         self.assertEqual(res.json['calendar_id'], calendar_id)
 
@@ -298,30 +350,40 @@ class CalendarTestCase(unittest.TestCase):
         @auth.requires_auth('patch:calendars')
         def patch_calendar(jwt, calendar_id):
     '''
+
     def test_patch_calendar_by_id_no_jwt_error(self):
         new_name = 'New calendar name'
-        res = self.client().patch('/api/calendars/1/', json={'name': new_name})
+        res = self.client().patch('/api/calendars/1/',
+                                  json={'name': new_name})
         self.check_no_authorization(res.json)
 
     def test_patch_calendar_by_id_admin(self):
         new_name = 'New calendar name'
-        res = self.client().patch('/api/calendars/1/', json={'name': new_name}, headers=self.get_rbac_headers('admin'))
+        res = self.client().patch('/api/calendars/1/',
+                                  json={'name': new_name},
+                                  headers=self.get_rbac_headers('admin'))
         self.assertEqual(res.json['success'], True)
         self.assertEqual(res.json['name'], new_name)
 
     def test_patch_calendar_by_id_manager_error(self):
         new_name = 'New calendar name'
-        res = self.client().patch('/api/calendars/1/', json={'name': new_name}, headers=self.get_rbac_headers('manager'))
+        res = self.client().patch('/api/calendars/1/',
+                                  json={'name': new_name},
+                                  headers=self.get_rbac_headers('manager'))
         self.check_no_permissions(res.json)
 
     def test_patch_calendar_by_id_user_error(self):
         new_name = 'New calendar name'
-        res = self.client().patch('/api/calendars/1/', json={'name': new_name}, headers=self.get_rbac_headers('user'))
+        res = self.client().patch('/api/calendars/1/',
+                                  json={'name': new_name},
+                                  headers=self.get_rbac_headers('user'))
         self.check_no_permissions(res.json)
 
     def test_patch_calendar_invalid_id_admin(self):
         new_name = 'New calendar name'
-        res = self.client().patch('/api/calendars/1000/', json={'name': new_name}, headers=self.get_rbac_headers('admin'))
+        res = self.client().patch('/api/calendars/1000/',
+                                  json={'name': new_name},
+                                  headers=self.get_rbac_headers('admin'))
         self.assertEqual(res.json['success'], False)
 
     '''
@@ -329,30 +391,35 @@ class CalendarTestCase(unittest.TestCase):
         @auth.requires_auth('get:tasks')
         def get_tasks(jwt, calendar_id):
     '''
+
     def test_get_tasks_by_calendar_id_no_jwt_error(self):
         res = self.client().get('/api/calendars/1/tasks/')
         self.check_no_authorization(res.json)
 
     def test_get_tasks_by_calendar_id_admin(self):
-        res = self.client().get('/api/calendars/1/tasks/', headers=self.get_rbac_headers('admin'))
+        res = self.client().get('/api/calendars/1/tasks/',
+                                headers=self.get_rbac_headers('admin'))
         self.assertEqual(res.json['success'], True)
         self.assertTrue(type(res.json['calendar']) == dict)
         self.assertTrue(type(res.json['tasks']) == list)
 
     def test_get_tasks_by_calendar_id_manager(self):
-        res = self.client().get('/api/calendars/1/tasks/', headers=self.get_rbac_headers('manager'))
+        res = self.client().get('/api/calendars/1/tasks/',
+                                headers=self.get_rbac_headers('manager'))
         self.assertEqual(res.json['success'], True)
         self.assertTrue(type(res.json['calendar']) == dict)
         self.assertTrue(type(res.json['tasks']) == list)
 
     def test_get_tasks_by_calendar_id_user(self):
-        res = self.client().get('/api/calendars/1/tasks/', headers=self.get_rbac_headers('user'))
+        res = self.client().get('/api/calendars/1/tasks/',
+                                headers=self.get_rbac_headers('user'))
         self.assertEqual(res.json['success'], True)
         self.assertTrue(type(res.json['calendar']) == dict)
         self.assertTrue(type(res.json['tasks']) == list)
 
     def test_get_tasks_invalid_calendar_id_admin(self):
-        res = self.client().get('/api/calendars/1000/tasks/', headers=self.get_rbac_headers('admin'))
+        res = self.client().get('/api/calendars/1000/tasks/',
+                                headers=self.get_rbac_headers('admin'))
         self.assertEqual(res.json['success'], False)
 
     '''
@@ -360,6 +427,7 @@ class CalendarTestCase(unittest.TestCase):
         @auth.requires_auth('post:tasks')
         def post_task(jwt):
     '''
+
     def test_post_task_no_jwt_error(self):
         task = {
             'calendar_id': 1,
@@ -391,7 +459,8 @@ class CalendarTestCase(unittest.TestCase):
             'repetition_type': ' ',
             'repetition_subtype':  ' '
         }
-        res = self.client().post('/api/calendars/tasks/', json=task, headers=self.get_rbac_headers('admin'))
+        res = self.client().post('/api/calendars/tasks/', json=task,
+                                 headers=self.get_rbac_headers('admin'))
         self.assertEqual(res.json['success'], True)
 
     def test_post_task_manager(self):
@@ -408,7 +477,8 @@ class CalendarTestCase(unittest.TestCase):
             'repetition_type': ' ',
             'repetition_subtype':  ' '
         }
-        res = self.client().post('/api/calendars/tasks/', json=task, headers=self.get_rbac_headers('manager'))
+        res = self.client().post('/api/calendars/tasks/', json=task,
+                                 headers=self.get_rbac_headers('manager'))
         self.assertEqual(res.json['success'], True)
 
     def test_post_task_user_error(self):
@@ -425,7 +495,8 @@ class CalendarTestCase(unittest.TestCase):
             'repetition_type': ' ',
             'repetition_subtype':  ' '
         }
-        res = self.client().post('/api/calendars/tasks/', json=task, headers=self.get_rbac_headers('user'))
+        res = self.client().post('/api/calendars/tasks/', json=task,
+                                 headers=self.get_rbac_headers('user'))
         self.check_no_permissions(res.json)
 
     def test_post_task_invalid_calendar_id_admin(self):
@@ -442,7 +513,8 @@ class CalendarTestCase(unittest.TestCase):
             'repetition_type': ' ',
             'repetition_subtype':  ' '
         }
-        res = self.client().post('/api/calendars/tasks/', json=task, headers=self.get_rbac_headers('admin'))
+        res = self.client().post('/api/calendars/tasks/', json=task,
+                                 headers=self.get_rbac_headers('admin'))
         self.assertEqual(res.json['success'], False)
 
     '''
@@ -450,6 +522,7 @@ class CalendarTestCase(unittest.TestCase):
         @auth.requires_auth('get:tasks')
         def get_task(jwt, task_id):
     '''
+
     def test_get_task_by_id_no_jwt_error(self):
         id = 1
         res = self.client().get('/api/calendars/tasks/%d/' % id)
@@ -457,25 +530,29 @@ class CalendarTestCase(unittest.TestCase):
 
     def test_get_task_by_id_admin(self):
         id = 1
-        res = self.client().get('/api/calendars/tasks/%d/' % id, headers=self.get_rbac_headers('admin'))
+        res = self.client().get('/api/calendars/tasks/%d/' %
+                                id, headers=self.get_rbac_headers('admin'))
         self.assertEqual(res.json['success'], True)
         self.assertEqual(res.json['task']['id'], id)
 
     def test_get_task_by_id_manager(self):
         id = 1
-        res = self.client().get('/api/calendars/tasks/%d/' % id, headers=self.get_rbac_headers('manager'))
+        res = self.client().get('/api/calendars/tasks/%d/' %
+                                id, headers=self.get_rbac_headers('manager'))
         self.assertEqual(res.json['success'], True)
         self.assertEqual(res.json['task']['id'], id)
 
     def test_get_task_by_id_user(self):
         id = 1
-        res = self.client().get('/api/calendars/tasks/%d/' % id, headers=self.get_rbac_headers('user'))
+        res = self.client().get('/api/calendars/tasks/%d/' %
+                                id, headers=self.get_rbac_headers('user'))
         self.assertEqual(res.json['success'], True)
         self.assertEqual(res.json['task']['id'], id)
 
     def test_get_task_invalid_id_admin(self):
         id = 1000
-        res = self.client().get('/api/calendars/tasks/%d/' % id, headers=self.get_rbac_headers('admin'))
+        res = self.client().get('/api/calendars/tasks/%d/' %
+                                id, headers=self.get_rbac_headers('admin'))
         self.assertEqual(res.json['success'], False)
         self.assertEqual(res.json['task_id'], id)
 
@@ -484,36 +561,46 @@ class CalendarTestCase(unittest.TestCase):
         @auth.requires_auth('patch:tasks')
         def update_task_day(jwt, task_id):
     '''
+
     def test_patch_task_day_by_id_no_jwt_error(self):
         id = 1
         new_day = 1
-        res = self.client().patch('/api/calendars/tasks/%d/' % id, json={'newDay': new_day})
+        res = self.client().patch('/api/calendars/tasks/%d/' %
+                                  id, json={'newDay': new_day})
         self.check_no_authorization(res.json)
 
     def test_patch_task_day_by_id_admin(self):
         id = 1
         new_day = 1
-        res = self.client().patch('/api/calendars/tasks/%d/' % id, json={'newDay': new_day}, headers=self.get_rbac_headers('admin'))
+        res = self.client().patch('/api/calendars/tasks/%d/' %
+                                  id, json={'newDay': new_day},
+                                  headers=self.get_rbac_headers('admin'))
         self.assertEqual(res.json['success'], True)
         self.assertEqual(res.json['task_id'], id)
 
     def test_patch_task_day_by_id_manager(self):
         id = 1
         new_day = 1
-        res = self.client().patch('/api/calendars/tasks/%d/' % id, json={'newDay': new_day}, headers=self.get_rbac_headers('manager'))
+        res = self.client().patch('/api/calendars/tasks/%d/' %
+                                  id, json={'newDay': new_day},
+                                  headers=self.get_rbac_headers('manager'))
         self.assertEqual(res.json['success'], True)
         self.assertEqual(res.json['task_id'], id)
 
     def test_patch_task_day_by_id_user_error(self):
         id = 1
         new_day = 1
-        res = self.client().patch('/api/calendars/tasks/%d/' % id, json={'newDay': new_day}, headers=self.get_rbac_headers('user'))
+        res = self.client().patch('/api/calendars/tasks/%d/' %
+                                  id, json={'newDay': new_day},
+                                  headers=self.get_rbac_headers('user'))
         self.check_no_permissions(res.json)
 
     def test_patch_task_invalid_id_admin(self):
         id = 1000
         new_day = 1
-        res = self.client().patch('/api/calendars/tasks/%d/' % id, json={'newDay': new_day}, headers=self.get_rbac_headers('admin'))
+        res = self.client().patch('/api/calendars/tasks/%d/' %
+                                  id, json={'newDay': new_day},
+                                  headers=self.get_rbac_headers('admin'))
         self.assertEqual(res.json['success'], False)
         self.assertEqual(res.json['task_id'], id)
 
@@ -522,6 +609,7 @@ class CalendarTestCase(unittest.TestCase):
     @auth.requires_auth('delete:tasks')
     def delete_task(jwt, task_id):
     '''
+
     def test_delete_task_by_id_no_jwt_error(self):
         id = 1
         res = self.client().delete('/api/calendars/tasks/%d/' % id)
@@ -529,26 +617,35 @@ class CalendarTestCase(unittest.TestCase):
 
     def test_delete_task_by_id_admin(self):
         id = 1
-        res = self.client().delete('/api/calendars/tasks/%d/' % id, headers=self.get_rbac_headers('admin'))
+        res = self.client().delete('/api/calendars/tasks/%d/' %
+                                   id,
+                                   headers=self.get_rbac_headers('admin'))
         self.assertEqual(res.json['success'], True)
         self.assertEqual(res.json['task_id'], id)
 
     def test_delete_task_by_id_manager(self):
         id = 1
-        res = self.client().delete('/api/calendars/tasks/%d/' % id, headers=self.get_rbac_headers('manager'))
+        res = self.client().delete('/api/calendars/tasks/%d/' %
+                                   id,
+                                   headers=self.get_rbac_headers('manager'))
         self.assertEqual(res.json['success'], True)
         self.assertEqual(res.json['task_id'], id)
 
     def test_delete_task_by_id_user_error(self):
         id = 1
-        res = self.client().delete('/api/calendars/tasks/%d/' % id, headers=self.get_rbac_headers('user'))
+        res = self.client().delete('/api/calendars/tasks/%d/' %
+                                   id,
+                                   headers=self.get_rbac_headers('user'))
         self.check_no_permissions(res.json)
 
     def test_delete_task_invalid_id_admin(self):
         id = 1000
-        res = self.client().delete('/api/calendars/tasks/%d/' % id, headers=self.get_rbac_headers('admin'))
+        res = self.client().delete('/api/calendars/tasks/%d/' %
+                                   id,
+                                   headers=self.get_rbac_headers('admin'))
         self.assertEqual(res.json['success'], False)
         self.assertEqual(res.json['task_id'], id)
+
 
 # Make the tests conveniently executable
 if __name__ == "__main__":
